@@ -47,10 +47,11 @@ func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	// replace http.HandleFunc with myRouter.HandleFunc
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
+	myRouter.HandleFunc("/{id}", returnSingleArticle)
 	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/time", returnTime)
+	/*myRouter.HandleFunc("/time", returnTime)
 	myRouter.HandleFunc("/story", returnStory)
-	myRouter.HandleFunc("/all", returnAllArticles)
+	myRouter.HandleFunc("/all", returnAllArticles)*/
 	// finally, instead of passing in nil, we want
 	// to pass in our newly created router as the second
 	// argument
@@ -72,12 +73,12 @@ func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnTime(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
+	fmt.Println("Endpoint Hit: returnTime")
 	json.NewEncoder(w).Encode(Articles)
 }
 
 func returnStory(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
+	fmt.Println("Endpoint Hit: returnStory")
 	json.NewEncoder(w).Encode(Articles)
 }
 
