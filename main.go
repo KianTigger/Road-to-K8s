@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -19,11 +20,10 @@ type Article struct {
 	Content string   `json:"content"`
 	Time    typetime `json:"time"`
 	Date    string   `json:"date"`
+	Success bool     `json:"success"`
+	Message string   `json:"message"`
 }
 
-// let's declare a global Articles array
-// that we can then populate in our main function
-// to simulate a database
 var Articles []Article
 
 func runIndefinite() {
@@ -38,23 +38,24 @@ func runIndefinite() {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
+	fmt.Fprintf(w, "Welcome to the base homepage.")
 	fmt.Println("Endpoint Hit: homePage")
+}
+
+func returnAllArticles(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: returnAllArticles")
+	json.NewEncoder(w).Encode(Articles)
 }
 
 func handleRequests() {
 	// creates a new instance of a mux router
 	myRouter := mux.NewRouter().StrictSlash(true)
-	// replace http.HandleFunc with myRouter.HandleFunc
+	myRouter.HandleFunc("/story", createArticle).Methods("POST")
+	myRouter.HandleFunc("/articles", returnAllArticles)
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
 	myRouter.HandleFunc("/{id}", returnSingleArticle)
 	myRouter.HandleFunc("/", homePage)
-	/*myRouter.HandleFunc("/time", returnTime)
-	myRouter.HandleFunc("/story", returnStory)
-	myRouter.HandleFunc("/all", returnAllArticles)*/
-	// finally, instead of passing in nil, we want
-	// to pass in our newly created router as the second
-	// argument
+
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
@@ -72,73 +73,29 @@ func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func returnTime(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnTime")
-	json.NewEncoder(w).Encode(Articles)
-}
+func createArticle(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Point Hit: create article")
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var article Article
+	json.Unmarshal(reqBody, &article)
+	// update our global Articles array to include
+	// our new Article
+	article.Success = true
+	Articles = append(Articles, article)
 
-func returnStory(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnStory")
-	json.NewEncoder(w).Encode(Articles)
-}
-
-func returnAllArticles(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
-	json.NewEncoder(w).Encode(Articles)
+	json.NewEncoder(w).Encode(article)
 }
 
 func main() {
+
+	//runIndefinite()
+
 	fmt.Println("Rest API v2.0 - Mux Routers")
 	Articles = []Article{
 		{Id: "1", Title: "Hello", Desc: "Article Description", Content: "Article Content"},
 		{Id: "time", Title: "Time", Desc: "Current time and date", Time: typetime(time.Now()), Date: (time.Now().Format("01-02-2008"))},
-		{Id: "story", Title: "Story", Desc: "Article Description 2", Content: "Article Content 2"},
+		{Id: "story2", Title: "Story", Desc: "Article Description 2", Content: "Article Content 2"},
 	}
 
 	handleRequests()
 }
-
-/*
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
-	fmt.Println("Endpoint Hit: homePage")
-}
-
-func handleRequests() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/time", returnTimeAndDate)
-	http.HandleFunc("/story", returnStory)
-	log.Fatal(http.ListenAndServe(":10000", nil))
-}
-
-func returnTimeAndDate(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
-	//json.NewEncoder(w).Encode(Articles)
-}
-
-func returnStory(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
-	//json.NewEncoder(w).Encode(Articles)
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
-}
-
-func main() {
-	r := mux.NewRouter{}
-	r.HandleFunc("/", handler).Methods("GET")
-	http.Handle("/", r)
-	http.ListenAndServe(":8080", nil)
-	Articles = []Article{
-		Article{time: time.Now(), date: time.Now().Format("01-02-2006")},
-		Article{success: true, message: "Once upon a time..."},
-	}
-
-	handleRequests()
-
-	//runIndefinite()
-}
-
-*/
